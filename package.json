@@ -1,0 +1,42 @@
+{
+  "name": "my-blog-v2",
+  "version": "2.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "prisma generate && next build",
+    "start": "next start -p 3000",
+    "postinstall": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset --force",
+    "import:v1": "tsx scripts/import-from-sqlite.ts",
+    "export:v1": "python scripts/export-sqlite.py",
+    "pack": "python scripts/pack.py"
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.3",
+    "highlight.js": "^11.11.1",
+    "jose": "^6.1.0",
+    "next": "16.4.3",
+    "pinyin-pro": "^3.29.5",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-markdown": "^10.1.0",
+    "rehype-highlight": "^7.0.2",
+    "rehype-slug": "^6.0.0",
+    "remark-gfm": "^4.0.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^22.13.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "postcss": "^8.5.6",
+    "prisma": "6.19.3",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.20.3",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>characteristic · 博客</title>
+<link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#ff6b9d"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="博客"><link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap">
+<style>
+:root{
+  --bg:#fdf7f9;--ink:#e14b7e;--ink-soft:#0a0a0a;
+  --pink:#ff6b9d;--pink-deep:#e14b7e;--pink-soft:#ffd6e3;
+  --line:#f0d9e2;--card:#fff;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--ink);line-height:1.7}
+
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 40px;display:flex;justify-content:space-between;align-items:center;background:rgba(253,247,249,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+.logo{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--pink),#c084fc);color:#fff;display:grid;place-items:center;font-family:'Ma Shan Zheng';font-weight:700}
+.name{font-family:'Ma Shan Zheng';font-size:20px}
+.nav-links{display:flex;gap:28px;align-items:center}
+.nav-links a{text-decoration:none;color:var(--ink-soft);font-size:15px}
+.nav-links a.active,.nav-links a:hover{color:var(--ink)}
+.write-btn{padding:8px 18px;border-radius:999px;border:none;cursor:pointer;background:var(--pink);color:#fff;font-size:14px}
+
+/* Hero：首屏全屏，滚动后收缩成小 banner */
+.hero{
+  position:relative;height:100vh;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  transition:height .5s ease;
+}
+.hero.shrink{height:180px}
+.hero-layer{position:absolute;inset:0;opacity:0;transition:opacity 1.5s}
+.hero-layer.active{opacity:1}
+.hero-layer video,.hero-layer img{width:100%;height:100%;object-fit:cover;filter:saturate(1.4) contrast(1.15) brightness(1.05)}
+.hero-layer::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(253,247,249,0) 0%,rgba(253,247,249,.55) 70%,rgba(253,247,249,.95) 100%)}
+.hero-content{position:relative;z-index:2;color:var(--ink);padding:0 20px;transition:all .5s}
+.hero h1{font-family:'Ma Shan Zheng';font-size:72px;font-weight:400;color:#8a7d96;text-shadow:0 4px 24px rgba(255,255,255,.6);margin-bottom:12px;transition:font-size .5s}
+.hero.shrink h1{font-size:32px;margin-bottom:4px}
+.hero .hand{font-family:'Ma Shan Zheng';font-size:26px;color:var(--ink);margin-bottom:18px;transition:all .5s}
+.hero.shrink .hand{font-size:14px;margin-bottom:0}
+.hero .sub{color:var(--ink-soft);font-size:15px;letter-spacing:2px}
+.hero.shrink .sub,.hero.shrink .tags,.hero.shrink .hero-dots{display:none}
+.tags{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:3;flex-wrap:wrap;justify-content:center}
+.tags span{padding:6px 16px;border-radius:999px;background:rgba(255,255,255,.85);font-size:13px;color:var(--ink)}
+.hero-dots{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:3}
+.hero-dots span{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.6);cursor:pointer}
+.hero-dots span.active{background:var(--pink)}
+
+/* 主体两栏 */
+.wrap{max-width:1200px;margin:0 auto;padding:30px 32px;display:grid;grid-template-columns:1fr 320px;gap:24px}
+.entries{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.entry-card{background:var(--card);border-radius:18px;padding:24px;text-decoration:none;color:var(--ink);border:1px solid var(--line);transition:transform .3s,box-shadow .3s;display:block}
+.entry-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(225,75,126,.15)}
+.entry-card .icon{font-size:26px;margin-bottom:10px}
+.entry-card h3{font-size:16px;margin-bottom:6px;color:var(--ink)}
+.entry-card p{font-size:13px;color:var(--ink-soft);line-height:1.6}
+
+.latest{margin-top:24px}
+.latest h2{font-family:'Ma Shan Zheng';font-size:24px;margin-bottom:16px}
+.latest-item{background:var(--card);border-radius:14px;padding:20px;border:1px solid var(--line);text-decoration:none;color:var(--ink);display:block;margin-bottom:12px;transition:transform .2s}
+.latest-item:hover{transform:translateY(-2px)}
+.latest-item .meta{font-size:12px;color:var(--ink-soft);margin-bottom:6px}
+.latest-item h4{font-size:15px;margin-bottom:6px;color:var(--ink)}
+.latest-item p{font-size:13px;color:var(--ink-soft);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-family:SimHei,'Microsoft YaHei',sans-serif;font-weight:500}
+
+/* 侧栏 */
+.side .card{background:var(--card);border-radius:20px;padding:24px;margin-bottom:18px;border:1px solid var(--line)}
+.me{text-align:center}
+.me .avatar img{width:90px;height:90px;border-radius:50%;border:3px solid var(--pink);box-shadow:0 0 0 4px var(--pink-soft);object-fit:cover}
+.me h3{font-family:'Ma Shan Zheng';font-size:20px;margin-top:12px;color:var(--ink)}
+.me p{font-size:12px;color:var(--ink-soft);margin-top:6px}
+.me .nums{display:flex;justify-content:space-around;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.me .nums b{display:block;font-size:20px;color:var(--ink)}
+.me .nums span{font-size:11px;color:var(--ink-soft)}
+.side h4{font-size:14px;color:var(--ink);margin-bottom:12px;font-family:'Ma Shan Zheng';font-size:16px}
+.cat-list a{display:flex;justify-content:space-between;text-decoration:none;color:var(--ink-soft);font-size:13px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.cat-list a:last-child{border:none}
+.cat-list a:hover{color:var(--ink)}
+.arch a{display:flex;justify-content:space-between;text-decoration:none;color:var(--ink-soft);font-size:13px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.arch a:last-child{border:none}
+.arch a:hover{color:var(--ink)}
+.mini-proj a{display:flex;gap:10px;text-decoration:none;color:var(--ink);padding:8px 0;border-bottom:1px dashed var(--line);align-items:center}
+.mini-proj a:last-child{border:none}
+.mini-proj a img{width:48px;height:48px;border-radius:10px;object-fit:cover;flex-shrink:0}
+.mini-proj a .t{font-size:13px;color:var(--ink);font-weight:500}
+.mini-proj a .d{font-size:11px;color:var(--ink-soft)}
+
+footer{text-align:center;padding:40px 20px;color:var(--ink-soft);border-top:1px solid var(--line);font-size:13px}
+footer .hand{font-family:'Ma Shan Zheng';font-size:18px;color:var(--ink)}
+
+@media(max-width:768px){
+  .nav{padding:12px 18px}
+  .nav-links{gap:14px;font-size:13px}
+  .hero h1{font-size:44px}
+  .wrap{grid-template-columns:1fr;padding:20px 18px}
+  .entries{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="brand" href="index.html">characteristic · 博客</a>
+  <div class="nav-links">
+    <a href="index.html" class="active">首页</a>
+    <a href="blog.html">博客</a>
+    <a href="projects.html">项目</a>
+    <a href="personal.html">记录</a>
+    <a href="space.html">空间</a>
+    <button class="write-btn" onclick="location.href='blog.html'">✎ 写文章</button>
+    <span id="userInfo" style="font-size:13px;color:var(--ink)"></span>
+    <button id="loginBtn" style="padding:8px 18px;border-radius:999px;border:1px solid var(--pink);background:#fff;color:var(--pink);font-size:14px;cursor:pointer">登录</button>
+  </div>
+</nav>
+
+<div id="authModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:200;place-items:center">
+  <div style="background:#fff;border-radius:18px;padding:28px;max-width:360px;width:90%">
+    <h3 style="font-family:'Ma Shan Zheng';color:var(--ink);margin-bottom:16px">登录 / 注册</h3>
+    <input id="authEmail" type="email" placeholder="邮箱" style="width:100%;padding:10px;margin-bottom:10px;border:1px solid #f0d9e2;border-radius:8px">
+    <input id="authPwd" type="password" placeholder="密码" style="width:100%;padding:10px;margin-bottom:14px;border:1px solid #f0d9e2;border-radius:8px">
+    <div id="authMsg" style="font-size:12px;color:#e14b7e;margin-bottom:10px"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="closeAuth()" style="padding:8px 16px;border:1px solid #f0d9e2;background:#fff;border-radius:999px;cursor:pointer">取消</button>
+      <button onclick="doAuth('register')" style="padding:8px 16px;border:1px solid var(--pink);background:#fff;color:var(--pink);border-radius:999px;cursor:pointer">注册</button>
+      <button onclick="doAuth('login')" style="padding:8px 16px;border:none;background:var(--pink);color:#fff;border-radius:999px;cursor:pointer">登录</button>
+    </div>
+    <a href="/auth/github" style="display:block;text-align:center;margin-top:14px;padding:10px;background:#24292e;color:#fff;border-radius:999px;text-decoration:none;font-size:14px">🐙 使用 GitHub 登录</a>
+  </div>
+</div>
+<script>
+function closeAuth(){document.getElementById('authModal').style.display='none';}
+async function doAuth(mode){
+  const email=document.getElementById('authEmail').value.trim();
+  const pwd=document.getElementById('authPwd').value;
+  const msg=document.getElementById('authMsg');
+  if(!email||!pwd){msg.textContent='请填邮箱和密码';return;}
+  try{
+    const r=await fetch('/api/'+mode,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,pwd})});
+    const d=await r.json();
+    if(d.ok){msg.textContent='';closeAuth();refreshUser();}
+    else msg.textContent=d.msg||'失败';
+  }catch(e){msg.textContent='后端未启动';}
+}
+async function refreshUser(){
+  try{
+    const r=await fetch('/api/me');const d=await r.json();
+    const ui=document.getElementById('userInfo');
+    const lb=document.getElementById('loginBtn');
+    if(d.ok){ui.textContent='你好，'+d.nick;lb.textContent='退出';lb.onclick=async()=>{await fetch('/api/logout');location.reload();};}
+    else{ui.textContent='';lb.textContent='登录';}
+  }catch(e){}
+}
+document.getElementById('loginBtn').onclick=()=>{
+  if(document.getElementById('loginBtn').textContent==='退出')return;
+  document.getElementById('authModal').style.display='grid';
+};
+refreshUser();
+</script>
+
+<header class="hero" id="hero">
+  <div class="hero-layer active"><video autoplay muted loop playsinline><source src="assets/bg-sakura.mp4" type="video/mp4"></video></div>
+  <div class="hero-layer"><video autoplay muted loop playsinline><source src="assets/bg-galaxy.mp4" type="video/mp4"></video></div>
+  <div class="hero-layer"><video autoplay muted loop playsinline><source src="assets/bg-wind-bell.mp4" type="video/mp4"></video></div>
+  <div class="hero-layer"><img src="assets/hero-angel.png" alt=""></div>
+  <div class="hero-content">
+    <h1 style="color:#000">谁暖了冬季</h1>
+    <div class="hand">characteristic · 全栈 / 单片机 / 机器视觉</div>
+    <div class="sub" style="color:var(--ink)">All of life is peaks and valleys. Don't let the peaks get too high and the valleys too low</div>
+  </div>
+  <div class="hero-dots"><span class="active"></span><span></span><span></span><span></span></div>
+</header>
+
+<main class="wrap">
+  <!-- 左 -->
+  <div>
+    <div class="entries" style="grid-template-columns:repeat(4,1fr)">
+      <a class="entry-card" href="blog.html"><div class="icon">📝</div><h3>博客</h3><p>技术笔记、踩坑记录。</p></a>
+      <a class="entry-card" href="projects.html"><div class="icon">🛠</div><h3>项目</h3><p>GitHub 开源仓库。</p></a>
+      <a class="entry-card" href="personal.html"><div class="icon">📖</div><h3>记录</h3><p>技能栈、成长时间线。</p></a>
+      <a class="entry-card" href="space.html"><div class="icon">💬</div><h3>空间</h3><p>日常照片与动态。</p></a>
+    </div>
+    <div class="latest" style="margin-top:24px">
+      <h2>🔥 热门文章 <span style="font-size:13px;font-weight:normal;color:#999;margin-left:8px">按评分排序</span></h2>
+      <div id="hotPosts"></div>
+    </div>
+    <div class="latest" style="margin-top:24px">
+      <h2>💬 项目</h2>
+      <a class="latest-item" id="projEntryCard" href="projects.html">
+        <div class="meta">GitHub · Wasd2490</div>
+        <h4>点右下角 ⚙ 选择要展示的仓库</h4>
+        <p></p>
+      </a>
+    </div>
+    <div class="latest" style="margin-top:24px">
+      <h2>📮 联系我</h2>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        <a class="latest-item" href="https://github.com/Wasd2490" target="_blank" style="text-align:center;padding:18px 10px">
+          <div style="font-size:24px">🐙</div>
+          <h4 style="margin-top:6px;font-size:15px">GitHub</h4>
+          <p style="font-size:12px">@Wasd2490</p>
+        </a>
+        <a class="latest-item" href="https://blog.csdn.net/wjcjjsjs?type=blog" target="_blank" style="text-align:center;padding:18px 10px">
+          <div style="font-size:24px">📝</div>
+          <h4 style="margin-top:6px;font-size:15px">CSDN</h4>
+          <p style="font-size:12px">@wjcjjsjs</p>
+        </a>
+        <a class="latest-item" href="mailto:3287316014@qq.com" style="text-align:center;padding:18px 10px">
+          <div style="font-size:24px">📮</div>
+          <h4 style="margin-top:6px;font-size:15px">邮箱</h4>
+          <p style="font-size:12px">3287316014@qq.com</p>
+        </a>
+      </div>
+    </div>
+  </div>
+  <!-- 右侧栏 -->
+  <aside class="side">
+    <div class="card me">
+      <div class="avatar"><img src="assets/avatar.png" alt="头像"></div>
+      <h3>谁暖了冬季</h3>
+      <p>characteristic · 博客</p>
+      <div class="nums">
+        <div><b id="nPost">0</b><span>文章</span></div>
+        <div><b>0</b><span>获赞</span></div>
+        <div><b>0</b><span>收藏</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <h4>categories</h4>
+      <div class="cat-list" id="catList"><div style="color:#333;font-size:13px">暂无分类</div></div>
+    </div>
+    <div class="card">
+      <h4>archive</h4>
+      <div class="arch" id="archList"><div style="color:#333;font-size:13px">暂无归档</div></div>
+    </div>
+    <div class="card">
+      <h4>projects</h4>
+      <div class="mini-proj" id="miniProj"><div style="color:#333;font-size:13px">上传带图的项目文章后自动显示</div></div>
+    </div>
+  </aside>
+</main>
+
+<!-- 设置浮钮 -->
+<div id="cfgBtn" style="position:fixed;right:24px;bottom:80px;width:44px;height:44px;border-radius:50%;background:var(--pink);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 4px 12px rgba(255,107,157,.4);z-index:99;font-size:18px">⚙</div>
+<div id="cfgModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:100;place-items:center">
+  <div style="background:#fff;border-radius:18px;padding:24px;max-width:420px;width:90%">
+    <h3 style="font-family:'Ma Shan Zheng';color:var(--ink);margin-bottom:14px">首页展示设置</h3>
+    <label style="font-size:13px;color:var(--ink-soft)">博客板块展示文章</label>
+    <select id="cfgPost" style="width:100%;padding:8px;margin:6px 0 14px;border:1px solid var(--line);border-radius:8px"></select>
+    <label style="font-size:13px;color:var(--ink-soft)">项目板块展示仓库</label>
+    <select id="cfgRepo" style="width:100%;padding:8px;margin:6px 0 14px;border:1px solid var(--line);border-radius:8px"></select>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="closeCfg()" style="padding:8px 18px;border:1px solid var(--line);background:#fff;border-radius:999px;cursor:pointer">取消</button>
+      <button onclick="saveCfg()" style="padding:8px 18px;border:none;background:var(--pink);color:#fff;border-radius:999px;cursor:pointer">保存</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="hand">characteristic · 博客</div>
+  <div style="margin-top:8px">仅供学习·著作权归@谁暖了冬季所有</div>
+</footer>
+
+<script>
+// Hero 轮播
+const layers=document.querySelectorAll('.hero-layer');
+const dots=document.querySelectorAll('.hero-dots span');
+let cur=0;
+function goTo(i){layers[cur].classList.remove('active');dots[cur].classList.remove('active');cur=i;layers[cur].classList.add('active');dots[cur].classList.add('active');}
+setInterval(()=>goTo((cur+1)%layers.length),5000);
+dots.forEach((d,i)=>d.addEventListener('click',()=>goTo(i)));
+
+// 滚动收缩 Hero
+const hero=document.getElementById('hero');
+window.addEventListener('scroll',()=>{
+  if(window.scrollY>100)hero.classList.add('shrink');
+  else hero.classList.remove('shrink');
+});
+
+// 从后端加载文章
+let POSTS=[];
+async function loadHome(){
+  try{
+    const r=await fetch('/api/posts?sort=hot');
+    POSTS=await r.json();
+  }catch(e){POSTS=[];}
+  document.getElementById('nPost').textContent=POSTS.length;
+  // 热门文章列表
+  const hotEl=document.getElementById('hotPosts');
+  if(POSTS.length){
+    hotEl.innerHTML=POSTS.slice(0,10).map((p,i)=>`
+      <a class="latest-item" href="blog.html#post/${p.id}">
+        <div class="meta">${p.cat||'未分类'} · ${p.date} · ${p.author||''}</div>
+        <h4>${i<3?'🏆 ':''}${p.title}</h4>
+        <p>${p.excerpt||''}</p>
+        <div style="font-size:12px;color:#999;margin-top:6px">👁 ${p.views||0} · 👍 ${p.likes||0} · 💬 ${p.comments||0} · 评分 ${p.score||0}</div>
+      </a>`).join('');
+  }else{
+    hotEl.innerHTML='<div style="color:#999;padding:20px;text-align:center">暂无文章，登录后发布第一篇吧</div>';
+  }
+  // categories / archive
+  const catMap={},archMap={};
+  POSTS.forEach(p=>{catMap[p.cat]=(catMap[p.cat]||0)+1;const ym=p.date.slice(0,7);archMap[ym]=(archMap[ym]||0)+1;});
+  const catList=document.getElementById('catList');
+  catList.innerHTML=Object.keys(catMap).length?Object.keys(catMap).sort().map(c=>`<a href="blog.html">${c} <span>${catMap[c]}</span></a>`).join(''):'<div style="color:#333;font-size:13px">暂无分类</div>';
+  const archList=document.getElementById('archList');
+  const months=Object.keys(archMap).sort().reverse();
+  archList.innerHTML=months.length?months.map(m=>`<a href="blog.html">${m.replace('-',' · ')} <span style="color:#333">${archMap[m]}</span></a>`).join(''):'<div style="color:#333;font-size:13px">暂无归档</div>';
+}
+loadHome();
+const CFG=JSON.parse(localStorage.getItem('glowden_home_cfg')||'{}');
+// 项目板块：用设置里选的仓库
+async function loadProjCard(){
+  let repos=[];
+  try{
+    const r=await fetch('/api/github-proxy?url=https://api.github.com/users/Wasd2490/repos?sort=updated&per_page=20');
+    repos=await r.json();
+    localStorage.setItem('glowden_repos',JSON.stringify(repos));
+  }catch(e){try{repos=JSON.parse(localStorage.getItem('glowden_repos')||'[]');}catch(e2){}}
+  const pe=document.getElementById('projEntryCard');
+  const r=repos.find(x=>x.name===CFG.repo)||repos[0];
+  if(r){
+    pe.href='projects.html#repo/'+r.name;
+    pe.querySelector('h4').textContent=r.name;
+    pe.querySelector('p').textContent=r.description||'暂无描述';
+  }else{
+    pe.querySelector('h4').textContent='GitHub 仓库';
+    pe.querySelector('p').textContent='打开项目页自动同步';
+  }
+}
+loadProjCard();
+
+// 设置弹窗
+document.getElementById('cfgBtn').onclick=async()=>{
+  document.getElementById('cfgModal').style.display='grid';
+  const ps=document.getElementById('cfgPost');
+  ps.innerHTML='<option value="">— 自动选最新一篇 —</option>'+POSTS.map(p=>`<option value="${p.title}" ${CFG.post===p.title?'selected':''}>${p.title}</option>`).join('');
+  const rs=document.getElementById('cfgRepo');
+  rs.innerHTML='<option value="">— 自动选最新更新 —</option><option>加载中…</option>';
+  let repos=[];
+  try{
+    const r=await fetch('/api/github-proxy?url=https://api.github.com/users/Wasd2490/repos?sort=updated&per_page=20');
+    repos=await r.json();
+    localStorage.setItem('glowden_repos',JSON.stringify(repos));
+  }catch(e){try{repos=JSON.parse(localStorage.getItem('glowden_repos')||'[]');}catch(e2){}}
+  rs.innerHTML='<option value="">— 自动选最新更新 —</option>'+repos.map(r=>`<option value="${r.name}" ${CFG.repo===r.name?'selected':''}>${r.name}</option>`).join('');
+};
+function closeCfg(){document.getElementById('cfgModal').style.display='none';}
+function saveCfg(){
+  localStorage.setItem('glowden_home_cfg',JSON.stringify({post:document.getElementById('cfgPost').value,repo:document.getElementById('cfgRepo').value}));
+  location.reload();
+}
+
+document.getElementById('miniProj').innerHTML='';
+</script>
+<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("/sw.js")}</script></body>
+</html>

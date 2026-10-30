@@ -1,0 +1,283 @@
+// 博客 V2 数据模型 —— 从 V1 (Flask + SQLite) 迁移到 Next.js + PostgreSQL
+// 设计要点：
+//   1. 内容、知识组织、社区互动三条链路分离
+//   2. 全文搜索用 PostgreSQL tsvector 生成列 + GIN 索引，中文另配 pg_trgm 兜底
+//   3. 所有表带 createdAt / updatedAt；删除尽量软删除
+//   4. searchVector 为数据库生成列，不在 Prisma 中映射，仅由 SQL 迁移维护
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum CommentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ============ 用户 ============
+model User {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  nick        String
+  password    String   // scrypt:iterations:salt:hash 或 legacy sha256（登录时自动升级）
+  avatar      String?
+  bio         String?
+  role        Role     @default(USER)
+  githubId    String?  @unique
+  githubLogin String?
+  legacyId    Int?     @unique // V1 SQLite users.id，迁移溯源用
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  posts        Post[]
+  comments     Comment[]
+  likes        Like[]
+  bookmarks    Bookmark[]
+  moments      Moment[]
+  albums       Album[]
+  column       Column[]
+  followers    Follow[] @relation("following")
+  following    Follow[] @relation("follower")
+
+  @@index([createdAt])
+}
+
+model Follow {
+  id          Int      @id @default(autoincrement())
+  followerId  Int
+  followingId Int
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
+}
+
+// ============ 知识组织 ============
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  sort        Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  posts Post[]
+}
+
+model Tag {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  posts PostTag[]
+}
+
+model PostTag {
+  postId Int
+  tagId  Int
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@index([tagId])
+}
+
+model Column {
+  id          Int      @id @default(autoincrement())
+  title       String
+  slug        String   @unique
+  description String?
+  cover       String?
+  status      String   @default("DRAFT") // DRAFT草稿, PENDING待审核, PUBLISHED已发布
+  ownerId     Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  posts Post[]
+
+  @@index([ownerId])
+}
+
+// ============ 内容 ============
+model Post {
+  id          Int        @id @default(autoincrement())
+  title       String
+  slug        String     @unique
+  content     String     // Markdown 原文
+  excerpt     String?
+  cover       String?
+  status      PostStatus @default(DRAFT)
+  publishedAt DateTime?
+  scheduledAt DateTime?
+  viewCount   Int        @default(0)
+  likeCount   Int        @default(0)
+  commentCount Int       @default(0)
+  wordCount   Int        @default(0)
+  pinned      Boolean    @default(false)
+  authorId    Int
+  categoryId  Int?
+  columnId    Int?
+  legacyId    Int?       @unique // V1 SQLite posts.id
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  category  Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  column    Column?   @relation(fields: [columnId], references: [id], onDelete: SetNull)
+  tags      PostTag[]
+  comments  Comment[]
+  likes     Like[]
+  bookmarks Bookmark[]
+  versions  PostVersion[]
+
+  @@index([status, publishedAt])
+  @@index([categoryId])
+  @@index([authorId])
+  @@index([viewCount])
+}
+
+// 文章版本历史：保存最近 N 版，支持回滚
+model PostVersion {
+  id        Int      @id @default(autoincrement())
+  postId    Int
+  title     String
+  content   String
+  excerpt   String?
+  editorId  Int?
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+}
+
+// ============ 动态 / 相册 ============
+model Moment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  media     String?  // JSON 数组：图片/视频地址
+  type      String?  // text / image / video
+  pinned    Boolean  @default(false)
+  authorId  Int?
+  legacyId  Int?     @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+}
+
+model Album {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  cover       String?
+  ownerId     Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner  User    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  photos Photo[]
+
+  @@index([ownerId])
+}
+
+model Photo {
+  id        Int      @id @default(autoincrement())
+  albumId   Int
+  url       String
+  caption   String?
+  sort      Int      @default(0)
+  createdAt DateTime @default(now())
+
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@index([albumId])
+}
+
+// ============ 社区互动 ============
+model Comment {
+  id         Int            @id @default(autoincrement())
+  content    String
+  status     CommentStatus  @default(APPROVED)
+  depth      Int            @default(0)   // 0=顶层，最多到 2（即 3 层）
+  authorId   Int?
+  guestNick  String?        // 兼容 V1 的匿名评论
+  guestEmail String?
+  postId     Int?
+  momentId   Int?
+  parentId   Int?
+  deletedAt  DateTime?      // 软删除
+  legacyId   Int?           @unique
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  author User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  post   Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
+
+  @@index([postId, status, createdAt])
+  @@index([parentId])
+  @@index([momentId])
+}
+
+model Like {
+  id     Int      @id @default(autoincrement())
+  userId Int
+  postId Int
+  momentId Int?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([postId])
+}
+
+model Bookmark {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  postId    Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([postId])
+}
+
+// ============ 站点配置 ============
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
