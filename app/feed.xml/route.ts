@@ -28,8 +28,8 @@ export async function GET(req: Request) {
     },
   })
 
-  const siteName = process.env.SITE_NAME || '谁暖了冬季'
-  const desc = process.env.SITE_DESCRIPTION || '一个记录技术、生活与思考的个人博客'
+  const siteName = process.env.SITE_NAME || 'characteristic·博客'
+  const desc = process.env.SITE_DESCRIPTION || '在星空下持续写作'
   const base = siteUrl()
   const self = columnSlug ? siteUrl(`/feed.xml?column=${encodeURIComponent(columnSlug)}`) : siteUrl('/feed.xml')
 

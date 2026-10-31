@@ -168,7 +168,7 @@ export default async function PostPage({ params }: { params: Promise<Params> }) 
     },
     publisher: {
       '@type': 'Organization',
-      name: process.env.SITE_NAME || '谁暖了冬季',
+      name: process.env.SITE_NAME || 'characteristic·博客',
     },
     image: post.cover ? [post.cover] : undefined,
   }

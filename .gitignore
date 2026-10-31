@@ -1,20 +1,41 @@
+# ---- 依赖与构建产物 ----
 node_modules/
 .next/
 out/
 build/
+*.tsbuildinfo
+next-env.d.ts
 
-# 环境变量
+# ---- 环境变量（含数据库口令与 OAuth 密钥）----
 .env
 .env.local
 .env*.local
 
-# 运行时产物
+# ---- 运行时数据 ----
 data/
-public/uploads/
-*.log
-.DS_Store
+run.log
+npm-debug.log*
+yarn-error.log*
 
-# 编辑器
+# ---- 大体积媒体（视频背景 ~42MB + 音乐 ~45MB）----
+# 需要完整资源请用 scripts/pack.py --with-media 生成的 _full 归档，
+# 或从服务器 public/ 目录拷贝。
+public/videos/
+public/music/
+public/uploads/
+
+# ---- 数据库文件 ----
+*.db
+*.sqlite
+*.sqlite3
+
+# ---- 备份目录 ----
+.git_v1_backup/
+backup_*/
+
+# ---- 编辑器 / 系统 ----
 .vscode/
 .idea/
-next-env.d.ts
+.DS_Store
+Thumbs.db
+.workbuddy/

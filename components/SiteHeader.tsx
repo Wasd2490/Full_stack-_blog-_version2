@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { DEFAULT_AVATAR } from '@/lib/utils'
 
 type Me = { id: number; nick: string; avatar: string | null; role: string } | null
 
@@ -85,7 +86,7 @@ export function SiteHeader({ siteName }: { siteName: string }) {
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={me.avatar || '/default-avatar.png'}
+                  src={me.avatar || DEFAULT_AVATAR}
                   alt=""
                   style={{
                     width: 28, height: 28, borderRadius: '50%',

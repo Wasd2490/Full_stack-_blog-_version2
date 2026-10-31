@@ -1,6 +1,22 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from './db'
 
+/**
+ * tsvector 表达式（运行时计算）。
+ *
+ * 不要改成引用生成列 p."searchVector"：Prisma schema 无法映射生成列，
+ * 一旦有人执行 `prisma db push` / `migrate dev`，该列会被当成"多余列"删掉，
+ * 搜索页立刻 500。运行时计算始终可用，代价是没有 GIN 索引加速；
+ * 需要索引时执行 `npm run db:search-index`（建的是表达式索引，随时可重建）。
+ *
+ * 权重：标题 A > 摘要 B > 正文 C。
+ */
+const TSVECTOR = Prisma.sql`(
+  setweight(to_tsvector('simple', coalesce(p.title, '')), 'A') ||
+  setweight(to_tsvector('simple', coalesce(p.excerpt, '')), 'B') ||
+  setweight(to_tsvector('simple', coalesce(p.content, '')), 'C')
+)`
+
 export type SearchResult = {
   id: number
   title: string
@@ -39,7 +55,7 @@ export async function searchPosts(opts: {
   const conditions: Prisma.Sql[] = [
     Prisma.sql`p.status = 'PUBLISHED'`,
     Prisma.sql`(
-      p."searchVector" @@ websearch_to_tsquery('simple', ${keyword})
+      ${TSVECTOR} @@ websearch_to_tsquery('simple', ${keyword})
       OR p.title ILIKE ${likePattern}
       OR p.content ILIKE ${likePattern}
       OR p.excerpt ILIKE ${likePattern}
@@ -75,9 +91,13 @@ export async function searchPosts(opts: {
     SELECT
       p.id, p.title, p.slug, p.excerpt, p.content, p."publishedAt", p."viewCount",
       c.name AS "categoryName", c.slug AS "categorySlug",
-      ts_rank(p."searchVector", websearch_to_tsquery('simple', ${keyword}))::float8 AS rank,
+      (
+        ts_rank(${TSVECTOR}, websearch_to_tsquery('simple', ${keyword}))
+        + CASE WHEN p.title ILIKE ${likePattern} THEN 1.0 ELSE 0 END
+        + CASE WHEN p.excerpt ILIKE ${likePattern} THEN 0.3 ELSE 0 END
+      )::float8 AS rank,
       CASE
-        WHEN p."searchVector" @@ websearch_to_tsquery('simple', ${keyword})
+        WHEN ${TSVECTOR} @@ websearch_to_tsquery('simple', ${keyword})
         THEN ts_headline('simple', p.content, websearch_to_tsquery('simple', ${keyword}),
              'MaxFragments=2, MinWords=10, MaxWords=40, StartSel=<mark>, StopSel=</mark>')
         ELSE NULL
@@ -146,7 +166,10 @@ export function highlightHtml(text: string, keyword: string): string {
   return out
 }
 
-/** 新建/更新文章后同步搜索向量（生成列由数据库维护，这里只做显式刷新兜底） */
+/**
+ * 文章变更后刷新搜索相关内容。
+ * 搜索走运行时 tsvector 表达式，无需维护生成列；这里只更新 updatedAt 触发 ISR 重新验证。
+ */
 export async function refreshSearchVector(postId: number): Promise<void> {
   await prisma.$executeRaw`UPDATE "Post" SET "updatedAt" = NOW() WHERE id = ${postId}`
 }

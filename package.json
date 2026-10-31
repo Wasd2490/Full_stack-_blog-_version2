@@ -1,6 +1,6 @@
 {
   "name": "my-blog-v2",
-  "version": "2.0.1",
+  "version": "2.5.3",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
@@ -13,7 +13,9 @@
     "db:reset": "prisma migrate reset --force",
     "import:v1": "tsx scripts/import-from-sqlite.ts",
     "export:v1": "python scripts/export-sqlite.py",
-    "pack": "python scripts/pack.py"
+    "pack": "python scripts/pack.py",
+    "db:search-index": "node scripts/ensure-search-index.mjs",
+    "smoke": "node scripts/smoke-test.mjs"
   },
   "dependencies": {
     "@prisma/client": "6.19.3",

@@ -1,7 +1,11 @@
 // 博客 V2 Service Worker
 // 策略：静态资源走缓存优先；HTML 页面与 API 走网络优先（保证内容实时）
-const CACHE = 'blog-v2-static-v2'
+// v3：V2.5 视觉改版，旧缓存的 CSS/JS 必须失效
+const CACHE = 'blog-v2-static-v3'
 const STATIC_ASSETS = ['/', '/manifest.json', '/offline.html']
+
+// 视频/音乐体积大（单个 40MB），绝不能进缓存，否则瞬间撑爆 Cache Storage 配额
+const NEVER_CACHE = /^\/(videos|music|uploads)\//
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -24,11 +28,11 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return
 
   const url = new URL(req.url)
-  const isStatic = /\.(js|css|png|jpg|jpeg|gif|svg|webp|woff2?|mp4)$/i.test(url.pathname)
+  const isStatic = /\.(js|css|png|jpg|jpeg|gif|svg|webp|woff2?)$/i.test(url.pathname)
   const isApi = url.pathname.startsWith('/api/')
 
-  // 静态资源：缓存优先
-  if (isStatic) {
+  // 静态资源：缓存优先（大媒体除外，直接走网络）
+  if (isStatic && !NEVER_CACHE.test(url.pathname)) {
     event.respondWith(
       caches.match(req).then(
         (hit) =>

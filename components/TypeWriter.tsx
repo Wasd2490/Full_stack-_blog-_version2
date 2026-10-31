@@ -2,28 +2,24 @@
 
 import { useEffect, useState } from 'react'
 
-const TYPED_TEXTS = [
-  'characteristic · 全栈开发',
-  'characteristic · 单片机嵌入式',
-  'characteristic · 机器视觉',
-  'characteristic · 硬件爱好者',
-]
+const DEFAULT_TEXTS = ['记录技术、生活与思考']
 
 /** Hero 打字机效果 */
-export function TypeWriter() {
+export function TypeWriter({ words }: { words?: string[] }) {
+  const list = words && words.length > 0 ? words : DEFAULT_TEXTS
   const [textIndex, setTextIndex] = useState(0)
   const [displayText, setDisplayText] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
-    const currentText = TYPED_TEXTS[textIndex]
+    const currentText = list[textIndex] ?? list[0]
     let timeout: NodeJS.Timeout
 
     if (!isDeleting && displayText === currentText) {
       timeout = setTimeout(() => setIsDeleting(true), 2000)
     } else if (isDeleting && displayText === '') {
       setIsDeleting(false)
-      setTextIndex((prev) => (prev + 1) % TYPED_TEXTS.length)
+      setTextIndex((prev) => (prev + 1) % list.length)
     } else {
       timeout = setTimeout(() => {
         setDisplayText(

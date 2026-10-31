@@ -61,7 +61,10 @@ export async function createSession(user: SessionUser): Promise<void> {
   jar.set(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    // 生产默认 Secure；本机用 IP/域名走 http 调试时，可在 .env 设 COOKIE_SECURE=false
+    secure: process.env.COOKIE_SECURE
+      ? process.env.COOKIE_SECURE === 'true'
+      : process.env.NODE_ENV === 'production',
     path: '/',
     maxAge: SESSION_MAX_AGE,
   })

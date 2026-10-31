@@ -9,8 +9,8 @@ import { GlobalVideoBg } from '@/components/GlobalVideoBg'
 import { MusicPlayer } from '@/components/MusicPlayer'
 import { siteUrl } from '@/lib/utils'
 
-const SITE_NAME = process.env.SITE_NAME || 'characteristic'
-const SITE_DESC = process.env.SITE_DESCRIPTION || '全栈 / 单片机 / 机器视觉'
+const SITE_NAME = process.env.SITE_NAME || 'characteristic·博客'
+const SITE_DESC = process.env.SITE_DESCRIPTION || '在星空下持续写作'
 const AUTHOR = process.env.AUTHOR_NAME || SITE_NAME
 
 export const metadata: Metadata = {

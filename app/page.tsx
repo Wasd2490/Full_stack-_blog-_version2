@@ -8,23 +8,33 @@ import { HeroCanvas } from '@/components/HeroCanvas'
 
 export const revalidate = 60
 
-const PAGE_SIZE = 5
+const SITE_NAME = process.env.SITE_NAME || 'characteristic·博客'
+const SITE_DESC = process.env.SITE_DESCRIPTION || '在星空下持续写作'
 
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ page?: string }>
-}) {
-  const sp = await searchParams
-  const page = Math.max(1, parseInt(sp.page || '1'))
-  const skip = (page - 1) * PAGE_SIZE
+/**
+ * 首页 Hero 专用文案。与站名/站描述解耦——
+ * 页头、页脚、SEO metadata 仍用 SITE_NAME / SITE_DESC，只改首屏这三行。
+ */
+const HERO_TITLE = 'characteristic·博客'
+const HERO_SUBTITLE = '在星空下持续写作'
+const HERO_TYPED = [
+  'characteristic·全栈',
+  'characteristic·单片机',
+  'characteristic·机器视觉',
+]
 
+const PAGE_SIZE = 8
+
+/**
+ * 刻意不接 searchParams：一旦读取查询参数，首页就会退化为动态渲染，
+ * 失去 SSG + ISR。首页只展示最新若干篇，翻页交给 /blog。
+ */
+export default async function HomePage() {
   const [posts, pinned, total, moments, notice, hotPosts, totalViews, totalComments, totalTags] = await Promise.all([
     prisma.post.findMany({
       where: { status: 'PUBLISHED' },
       orderBy: [{ publishedAt: 'desc' }, { id: 'desc' }],
       take: PAGE_SIZE,
-      skip,
       select: {
         id: true, title: true, slug: true, excerpt: true, publishedAt: true,
         viewCount: true, likeCount: true, commentCount: true, wordCount: true,
@@ -71,8 +81,6 @@ export default async function HomePage({
     { label: '标签', value: totalTags, icon: '🏷' },
   ]
 
-  const totalPages = Math.ceil(total / PAGE_SIZE)
-
   return (
     <div className="container-site" style={{ paddingTop: 24, paddingBottom: 40 }}>
       {/* 整屏 Hero 视频画布 */}
@@ -80,14 +88,25 @@ export default async function HomePage({
         <HeroCanvas />
         <div className="hero-content" style={{ color: 'white' }}>
           <h1 style={{ fontSize: 48, fontWeight: 900, marginBottom: 16, background: 'linear-gradient(135deg, #fbcfe8, #f472b6, #ec4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', textShadow: 'none' }}>
-            characteristic · 博客
+            {HERO_TITLE}
           </h1>
           <p style={{ fontSize: 24, marginBottom: 12, opacity: 1, color: '#fbcfe8', minHeight: 36, fontWeight: 600 }}>
-            <TypeWriter />
+            <TypeWriter words={HERO_TYPED} />
           </p>
-          <p style={{ fontSize: 16, marginBottom: 32, opacity: 0.8, color: 'white' }}>
-            在星空下持续写作
+          <p style={{ fontSize: 16, marginBottom: 24, opacity: 0.85, color: 'white' }}>
+            {HERO_SUBTITLE}
           </p>
+
+          {/* 站点统计 */}
+          <div style={{ display: 'flex', gap: 28, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 28 }}>
+            {stats.map((s) => (
+              <div key={s.label} style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: 'white', lineHeight: 1.2 }}>{s.value}</div>
+                <div style={{ fontSize: 12.5, color: '#fbcfe8', marginTop: 2 }}>{s.icon} {s.label}</div>
+              </div>
+            ))}
+          </div>
+
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
             <Link href="/blog" className="btn btn-primary">浏览全部文章 · {total}</Link>
             <Link href="/archive" className="btn" style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', color: 'white', border: '1px solid rgba(255,255,255,0.3)' }}>归档时间线</Link>
@@ -123,6 +142,12 @@ export default async function HomePage({
             </div>
           ) : (
             posts.map((p) => <PostCard key={p.id} post={shape(p)} />)
+          )}
+
+          {total > posts.length && (
+            <div style={{ textAlign: 'center', marginTop: 8 }}>
+              <Link href="/blog" className="btn">查看更多 →</Link>
+            </div>
           )}
 
           {moments.length > 0 && (

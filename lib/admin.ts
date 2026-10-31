@@ -326,6 +326,7 @@ export async function saveColumnAction(input: {
   slug?: string
   description?: string
   cover?: string
+  status?: string
 }): Promise<ActionResult> {
   const admin = await assertAdmin()
   if (!admin) return { ok: false, msg: '请先登录或没有权限' }
@@ -339,8 +340,16 @@ export async function saveColumnAction(input: {
       data: { title, slug, description: input.description ?? '', cover: input.cover || null },
     })
   } else {
+    // 管理员在后台创建的专栏直接发布；用户端 /api/columns 创建的才是 DRAFT
     await prisma.column.create({
-      data: { title, slug, description: input.description ?? '', cover: input.cover || null, ownerId: admin.id },
+      data: {
+        title,
+        slug,
+        description: input.description ?? '',
+        cover: input.cover || null,
+        ownerId: admin.id,
+        status: input.status ?? 'PUBLISHED',
+      },
     })
   }
   revalidatePath('/admin/columns')
