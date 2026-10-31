@@ -1,19 +1,21 @@
 # 谁暖了冬季 · 个人博客站 V1.3
 
-**线上地址：** http://106.52.34.17:5000（腾讯云轻量服务器） | https://xue12.pythonanywhere.com（备用）
+**线上地址：** http://106.52.34.17（腾讯云轻量服务器）
 
-## V1.3.2 修复（2026-10-29）
+## V1.3.2 更新（2026-10-31）
 
-- 修复 GitHub OAuth 回调 500 错误：获取用户信息的 req 被注释吞掉
-- 修复 GitHub OAuth 回调地址写死 127.0.0.1，改为环境变量可配置
-- 修复 index.html 直接调 GitHub API 导致 CORS，统一走后端代理
+- 新增**音乐播放器**：右下角固定粉色风格播放器
+  - 支持播放/暂停、上一首/下一首、歌单列表、进度条
+  - 本地音乐文件存放于 assets/music/ 目录
+  - 内置 4 首歌：无间渡、你要的全拿走、忘不掉的你、把回忆拼好给你
+- 全站 5 个页面统一添加音乐播放器
 
 ## V1.3.1 修复（2026-10-29）
 
-- 修复 GitHub API 浏览器 CORS 问题：新增后端通用代理 `/api/github-proxy?url=...`
-- 修复 `/api/moments` 路由被注释吞掉导致 404
+- 修复 GitHub API 浏览器 CORS 问题：新增后端通用代理 /api/github-proxy?url=...
+- 修复 /api/moments 路由被注释吞掉导致 404
 - 部署到腾讯云 Ubuntu 服务器
-- 新增 `/api/github/repos` 和 `/api/github/readme/<repo>` 备用接口
+- 新增 /api/github/repos 和 /api/github/readme/<repo> 备用接口
 
 ## V1.3 更新（2026-10-25）
 
@@ -25,7 +27,6 @@
 - PWA 支持：manifest.json + service worker，手机可添加到主屏幕
 - 首页文章从后端加载，不再读 localStorage
 - 启动 app.py 自动拉起 ngrok 公网穿透
-
 ## V1.2 更新（2026-10-21）
 
 - 空间动态改后端 SQLite 存储，刷新不丢
@@ -70,32 +71,13 @@
 ## 本地运行
 
 ```bash
-pip install flask
+pip install flask flask-cors
 python app.py
 ```
 
 浏览器打开 http://127.0.0.1:5000
 
 启动后自动拉起 ngrok，控制台会打印公网地址。
-
-## 服务器部署（腾讯云 Ubuntu）
-
-- 服务器：腾讯云轻量应用服务器，Ubuntu
-- 公网 IP：106.52.34.17
-- 端口：5000
-- 部署目录：`~/my_blog_V1.3`
-- 启动命令：`python3 app.py`
-- GitHub OAuth 回调：`http://106.52.34.17:5000/auth/github/callback`
-- Python：Python 3 自带 sqlite3，只需 `pip3 install flask`
-
-```bash
-# 服务器首次部署
-cd ~
-unzip my_blog_V1.3.zip -d my_blog_V1.3
-cd my_blog_V1.3
-pip3 install flask
-python3 app.py
-```
 
 ## 技术栈
 
