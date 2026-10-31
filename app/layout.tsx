@@ -6,6 +6,7 @@ import { ServiceWorkerRegistrar } from '@/components/ServiceWorkerRegistrar'
 import { VisualEffects } from '@/components/VisualEffects'
 import { ReadingProgress } from '@/components/ReadingProgress'
 import { GlobalVideoBg } from '@/components/GlobalVideoBg'
+import { MusicPlayer } from '@/components/MusicPlayer'
 import { siteUrl } from '@/lib/utils'
 
 const SITE_NAME = process.env.SITE_NAME || 'characteristic'
@@ -92,6 +93,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <SiteHeader siteName={SITE_NAME} />
         <main style={{ minHeight: 'calc(100vh - 200px)', position: 'relative', zIndex: 1 }}>{children}</main>
         <SiteFooter siteName={SITE_NAME} desc={SITE_DESC} />
+        <MusicPlayer />
       </body>
     </html>
   )
